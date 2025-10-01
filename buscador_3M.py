@@ -32,6 +32,17 @@ with col2:
 
 st.markdown("---")
 
+# --- Selección de Centro de Distribución ---
+locations = {
+    "Santa Isabel": "1299544230",
+    "ENEA": "1200217273"
+}
+selected_location = st.selectbox(
+    "Selecciona el Centro de Distribución:",
+    options=list(locations.keys())
+)
+selected_gid = locations[selected_location]
+
 
 # --- Función para Generar Código de Barras ---
 def generate_barcode(folio):
@@ -51,13 +62,14 @@ def generate_barcode(folio):
         return None
 
 # --- Carga de Datos con Caché ---
+# Se añade el parámetro 'gid' para cargar la hoja correcta
 
 
 @st.cache_data
-def load_data():
-    """Carga los datos desde la Google Sheet pública."""
+def load_data(gid):
+    """Carga los datos desde la Google Sheet pública, según el GID seleccionado."""
     sheet_id = "1uga-VQ9UTr9lhMPe-VGjA581G2Fyjatt6bNB6JeEykk"
-    sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid=1299544230"
+    sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
     try:
         column_types = {
             "Folio Rebuss": str,
@@ -71,13 +83,14 @@ def load_data():
         df['search_col'] = df['ABDESC'].str.lower().fillna('')
         return df
     except Exception as e:
-        st.error(f"Error al cargar los datos desde Google Sheets: {e}")
+        st.error(
+            f"Error al cargar los datos desde Google Sheets para {selected_location}: {e}")
         st.info("Verifica que el enlace de la hoja de cálculo sea correcto, público y que los encabezados estén en la fila 6.")
         return pd.DataFrame()
 
 
-# Cargamos los datos
-df = load_data()
+# Cargamos los datos pasando el GID seleccionado
+df = load_data(selected_gid)
 
 # --- Interfaz de Búsqueda ---
 if not df.empty:
@@ -129,7 +142,8 @@ if not df.empty:
     else:
         st.info("Esperando una consulta para mostrar los resultados.")
 else:
-    st.warning("No se pudieron cargar los datos para iniciar la aplicación.")
+    st.warning(
+        f"No se pudieron cargar los datos para el centro '{selected_location}'.")
 
 # --- Pie de Página ---
 st.markdown("---")
