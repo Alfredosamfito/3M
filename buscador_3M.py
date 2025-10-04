@@ -155,4 +155,4 @@ else:
 
 # --- Pie de Página ---
 st.markdown("---")
-st.markdown("Creado con ❤️ por Gemini.")
+st.markdown("Creado con ❤️ por ARB.")
