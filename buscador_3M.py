@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
-from barcode import EAN13
+from barcode import Code128  # Cambiado de EAN13 a Code128
 from barcode.writer import ImageWriter
 from PIL import Image  # Importamos la librería para manejar imágenes
 
@@ -18,7 +18,7 @@ st.set_page_config(
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    st.title("🔍 Buscador REBUSS - 3M")
+    st.title("🔍 Buscador Avanzado en Google Sheets")
     st.markdown(
         "Escribe una o más palabras clave para buscar en la columna **'ABDESC'** de la base de datos.")
 
@@ -46,18 +46,21 @@ selected_gid = locations[selected_location]
 
 # --- Función para Generar Código de Barras ---
 def generate_barcode(folio):
-    """Genera un código de barras EAN13 a partir de un folio y lo devuelve como una imagen en memoria."""
+    """Genera un código de barras Code128 a partir de un folio y lo devuelve como una imagen en memoria."""
     try:
-        # EAN13 necesita 12 dígitos para calcular el 13ro (dígito de control).
-        # Rellenamos el folio con ceros a la izquierda hasta completar 12 dígitos.
-        code = str(folio).zfill(12)
+        # Usamos el folio directamente como un string, sin rellenar con ceros.
+        code = str(folio)
 
         # Generar el código de barras en un buffer de memoria para no crear archivos
         buffer = io.BytesIO()
-        ean = EAN13(code, writer=ImageWriter())
-        ean.write(buffer)
+        # Se cambia EAN13 por Code128. Se añaden opciones para que el texto sea visible.
+        barcode_img = Code128(code, writer=ImageWriter())
+        barcode_img.write(
+            buffer, options={'write_text': True, 'font_size': 10, 'module_height': 12.0})
         return buffer
-    except Exception:
+    except Exception as e:
+        # Imprime el error en la consola de streamlit para depuración
+        print(f"Error generando barcode para folio '{folio}': {e}")
         # Devuelve None si el folio no es válido para un código de barras (ej. contiene letras)
         return None
 
@@ -76,8 +79,10 @@ def load_data(gid):
             "ABASSU": str,
             "ABDESC": str,
             "ABSER#": str,
+            "PLDESC": str,  # Se añade la nueva columna
         }
-        columns_to_use = ["Folio Rebuss", "ABASSU", "ABDESC", "ABSER#"]
+        columns_to_use = ["Folio Rebuss", "ABASSU", "ABDESC",
+                          "ABSER#", "PLDESC"]  # Se añade la nueva columna
         df = pd.read_csv(sheet_url, usecols=columns_to_use,
                          dtype=column_types, header=5)
         df['search_col'] = df['ABDESC'].str.lower().fillna('')
@@ -115,12 +120,15 @@ if not df.empty:
             # Iteramos sobre los resultados para mostrarlos individualmente con su código de barras
             for index, row in result_df.iterrows():
                 # Usamos un expander para mostrar cada resultado de forma ordenada
-                with st.expander(f"Folio: {row['Folio Rebuss']} - {row['ABASSU']}"):
+                # Se actualiza el encabezado del expander para incluir PLDESC
+                with st.expander(f"Folio: {row['Folio Rebuss']} - {row['PLDESC']}"):
                     # Dividimos en dos columnas para datos y barcode
                     col1, col2 = st.columns([2, 1])
 
                     with col1:
                         st.markdown(f"**Folio Rebuss:** {row['Folio Rebuss']}")
+                        # Se muestra también dentro del expander
+                        st.markdown(f"**PLDESC:** {row['PLDESC']}")
                         st.markdown(f"**ABASSU:** {row['ABASSU']}")
                         st.markdown(f"**ABSER#:** {row['ABSER#']}")
                         st.markdown(
@@ -147,4 +155,4 @@ else:
 
 # --- Pie de Página ---
 st.markdown("---")
-st.markdown("Creado con ❤️ por ARB.")
+st.markdown("Creado con ❤️ por Gemini.")
