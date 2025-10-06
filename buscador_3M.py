@@ -34,8 +34,8 @@ st.markdown("---")
 
 # --- Selección de Centro de Distribución ---
 locations = {
-    "Santa Isabel": "1299544230",
-    "ENEA": "1200217273"
+    "ENEA": "1299544230",
+    "SANTA ISABEL": "1200217273"
 }
 selected_location = st.selectbox(
     "Selecciona el Centro de Distribución:",
